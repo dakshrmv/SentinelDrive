@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SentinelDrive - AI Driver Safety System{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <button id="themeToggle" class="theme-toggle">🌙</button>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">🛡️ SentinelDrive</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">🏠 HOME</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/detection">📹 DETECTION</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/analytics">📊 ANALYTICS</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/history">📹 EVENTS</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/gallery">📸 GALLERY</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings">⚙️ SETTINGS</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profiles">👥 PROFILES</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">ℹ️ ABOUT</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-fluid my-5">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-glass">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 <strong>SentinelDrive</strong>. All Rights Reserved.</p>
+                    <p>Enterprise-Grade AI Driver Safety Solution</p>
+                </div>
+                <div class="col-md-6" style="text-align: right;">
+                    <p>Developed by <strong>Daksh Sharma</strong></p>
+                    <p>🚗 Making roads safer, one drive at a time</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Performance JS -->
+    <script src="{{ url_for('static', filename='js/performance.js') }}"></script>
+    
+    <!-- Detection UI JS -->
+    <script src="{{ url_for('static', filename='js/detection-ui.js') }}"></script>
+    
+    <!-- Chart JS (for analytics) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+
+    <!-- Navbar & Theme Styling -->
+    <style>
+        .navbar {
+            background: rgba(255, 255, 255, 0.12) !important;
+            backdrop-filter: blur(25px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+            padding: 1.2rem 0;
+        }
+
+        .navbar-brand {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 900;
+            font-size: 1.8rem;
+            color: #ffffff !important;
+            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+            letter-spacing: -1px;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .navbar-brand:hover {
+            transform: scale(1.1) rotate(1deg);
+            text-shadow: 0 6px 20px rgba(255, 255, 255, 0.8);
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.4));
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.95) !important;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 0 0.8rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 0 !important;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 3px;
+            bottom: -10px;
+            left: 50%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3));
+            transition: all 0.4s ease;
+            transform: translateX(-50%);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-link:hover {
+            color: #ffffff !important;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+            transform: translateY(-3px);
+        }
+
+        .nav-link:hover::after {
+            width: 120%;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+        }
+
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.95)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Footer Styling */
+        .footer-glass {
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            padding: 3rem 0;
+            margin-top: 6rem;
+            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .footer-glass p {
+            color: #ffffff;
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .footer-glass strong {
+            color: #ffffff;
+            font-weight: 800;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: #ffffff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1) rotate(20deg);
+        }
+
+        /* Main Content Area */
+        main {
+            animation: pageSlideInSmooth 0.8s ease-out;
+        }
+
+        @keyframes pageSlideInSmooth {
+            0% {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.4rem;
+            }
+
+            .nav-link {
+                margin: 0.3rem 0;
+                font-size: 0.9rem;
+            }
+
+            .navbar-nav {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.8rem;
+                padding: 1rem;
+                margin-top: 1rem;
+            }
+
+            .footer-glass .row {
+                text-align: center;
+            }
+
+            .footer-glass .col-md-6 {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e) !important;
+        }
+
+        body.dark-mode .navbar {
+            background: rgba(15, 20, 25, 0.95) !important;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.2) !important;
+        }
+
+        body.dark-mode .glass-card {
+            background: rgba(31, 32, 62, 0.8) !important;
+            border-color: rgba(255, 107, 107, 0.25) !important;
+        }
+
+        body.dark-mode .metric-card {
+            background: rgba(41, 42, 82, 0.7) !important;
+        }
+
+        body.dark-mode .footer-glass {
+            background: rgba(15, 20, 25, 0.9) !important;
+            border-top-color: rgba(255, 107, 107, 0.2) !important;
+        }
+
+        body.dark-mode .feature-box {
+            background: rgba(41, 42, 82, 0.6) !important;
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Selection Color */
+        ::selection {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ffffff;
+        }
+    </style>
+
+    <!-- Theme Toggle Script -->
+    <script>
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('themeToggle');
+            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeToggle').textContent = '☀️';
+        }
+
+        // Close navbar when clicking on a link (mobile)
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                const navbar = document.querySelector('.navbar-collapse');
+                if (navbar && navbar.classList.contains('show')) {
+                    navbar.classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

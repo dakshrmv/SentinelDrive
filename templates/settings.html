@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Settings - SentinelDrive{% endblock %}
+{% block content %}
+
+<h1 style="text-align: center; margin-bottom: 2rem;">⚙️ SETTINGS</h1>
+
+<div class="row g-4">
+    <!-- Detection Settings -->
+    <div class="col-lg-6">
+        <div class="glass-card fade-in">
+            <h3>🎯 Detection Settings</h3>
+            
+            <div class="setting-item">
+                <label>Sensitivity Level</label>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.8rem;">
+                    <button class="setting-btn" onclick="setSensitivity('easy')">Easy</button>
+                    <button class="setting-btn active" onclick="setSensitivity('normal')">Normal</button>
+                    <button class="setting-btn" onclick="setSensitivity('strict')">Strict</button>
+                </div>
+                <p style="font-size: 0.85rem; color: #b0b8c5; margin-top: 0.5rem;">
+                    Easy: Less alerts | Normal: Balanced | Strict: More sensitive
+                </p>
+            </div>
+
+            <div class="setting-item">
+                <label>Alert Threshold (0-10)</label>
+                <input type="range" id="alertThreshold" min="0" max="10" value="5" 
+                       style="width: 100%; margin-top: 0.8rem; cursor: pointer;">
+                <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.85rem;">
+                    <span>More Lenient</span>
+                    <span id="thresholdValue">5</span>
+                    <span>More Strict</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label>Camera Resolution</label>
+                <select id="cameraResolution" style="width: 100%; padding: 0.6rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+                    <option>640x480</option>
+                    <option selected>1280x720</option>
+                    <option>1920x1080</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="col-lg-6">
+        <div class="glass-card fade-in">
+            <h3>🔔 Notification Settings</h3>
+            
+            <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label>Enable Desktop Notifications</label>
+                    <input type="checkbox" id="desktopNotif" checked onchange="updateSettings()">
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label>Enable Sound Alerts</label>
+                    <input type="checkbox" id="soundAlert" checked onchange="updateSettings()">
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label>Alert Volume</label>
+                <input type="range" id="alertVolume" min="0" max="100" value="70" 
+                       style="width: 100%; margin-top: 0.8rem; cursor: pointer;" onchange="updateSettings()">
+                <div style="text-align: center; margin-top: 0.5rem; font-size: 0.85rem;" id="volumeDisplay">70%</div>
+            </div>
+
+            <div class="setting-item">
+                <label>Language</label>
+                <select id="language" style="width: 100%; padding: 0.6rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);" onchange="updateSettings()">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="hi">Hindi</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Settings -->
+<div class="row g-4 mt-2">
+    <div class="col-lg-6">
+        <div class="glass-card fade-in">
+            <h3>🖥️ System Settings</h3>
+            
+            <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label>Auto-Export Sessions</label>
+                    <input type="checkbox" id="autoExport" onchange="updateSettings()">
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label>Dark Mode</label>
+                    <input type="checkbox" id="darkMode" checked onchange="updateSettings()">
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label>Data Storage Location</label>
+                <input type="text" value="/data/sessions" disabled 
+                       style="width: 100%; padding: 0.6rem; border-radius: 0.6rem; background: rgba(255,255,255,0.08); color: #b0b8c5; border: 1px solid rgba(255,255,255,0.1);">
+            </div>
+        </div>
+    </div>
+
+    <!-- Calibration -->
+    <div class="col-lg-6">
+        <div class="glass-card fade-in">
+            <h3>📏 Calibration</h3>
+            
+            <div class="setting-item">
+                <p style="color: #b0b8c5; margin-bottom: 1rem;">Run calibration to optimize detection for your face and lighting conditions.</p>
+                <button class="btn btn-glass w-100" onclick="runCalibration()">🔧 Run Calibration</button>
+            </div>
+
+            <div class="setting-item">
+                <label>Last Calibration</label>
+                <p id="lastCalib" style="color: #ff6b9d; font-weight: 600;">Never</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Button -->
+<div style="text-align: center; margin-top: 2rem;">
+    <button class="btn btn-glass btn-lg" onclick="saveAllSettings()">💾 SAVE ALL SETTINGS</button>
+</div>
+
+<script>
+    document.getElementById('alertThreshold').addEventListener('input', (e) => {
+        document.getElementById('thresholdValue').textContent = e.target.value;
+    });
+
+    document.getElementById('alertVolume').addEventListener('input', (e) => {
+        document.getElementById('volumeDisplay').textContent = e.target.value + '%';
+    });
+
+    async function setSensitivity(level) {
+        document.querySelectorAll('.setting-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    async function updateSettings() {
+        const settings = {
+            sensitivity: document.querySelector('.setting-btn.active').textContent.toLowerCase(),
+            alert_threshold: parseInt(document.getElementById('alertThreshold').value),
+            notifications: document.getElementById('desktopNotif').checked,
+            language: document.getElementById('language').value
+        };
+        await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+    }
+
+    async function saveAllSettings() {
+        await updateSettings();
+        alert('✅ Settings saved successfully!');
+    }
+
+    function runCalibration() {
+        alert('Calibration feature coming soon!');
+    }
+</script>
+
+<style>
+.setting-item {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item label {
+    display: block;
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.setting-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.6rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.setting-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.setting-btn.active {
+    background: #ff6b9d;
+    border-color: #ff6b9d;
+    box-shadow: 0 0 20px rgba(255, 107, 157, 0.4);
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+input[type="range"] {
+    accent-color: #ff6b9d;
+}
+</style>
+
+{% endblock %}

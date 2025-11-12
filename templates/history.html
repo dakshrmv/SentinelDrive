@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Session History - SentinelDrive{% endblock %}
+{% block content %}
+
+<h1 style="text-align: center; margin-bottom: 2rem;">📹 SESSION HISTORY</h1>
+
+<div class="row g-4">
+    <div class="col-lg-3">
+        <div class="glass-card fade-in">
+            <h4>🔍 Filters</h4>
+            <div style="margin-bottom: 1rem;">
+                <label style="color: #ffffff; font-weight: 600;">Date Range</label>
+                <input type="date" id="dateFrom" style="width: 100%; padding: 0.6rem; margin-top: 0.5rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+                <input type="date" id="dateTo" style="width: 100%; padding: 0.6rem; margin-top: 0.5rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+            <button class="btn btn-glass w-100" onclick="filterSessions()">🔎 Filter</button>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="glass-card fade-in">
+            <h4>📊 All Sessions</h4>
+            <div id="sessionsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadSessions() {
+        const response = await fetch('/api/sessions');
+        const data = await response.json();
+        displaySessions(data.sessions);
+    }
+
+    function displaySessions(sessions) {
+        const list = document.getElementById('sessionsList');
+        if (sessions.length === 0) {
+            list.innerHTML = '<p style="text-align: center; color: #b0b8c5;">No sessions found</p>';
+            return;
+        }
+
+        list.innerHTML = sessions.map(session => `
+            <div style="background: rgba(255,255,255,0.08); padding: 1rem; border-radius: 0.8rem; margin-bottom: 1rem; border-left: 4px solid #ff6b9d;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <p style="font-weight: 700; color: #ffffff; margin: 0;">Session ${session.id}</p>
+                        <p style="color: #b0b8c5; margin: 0.3rem 0;">📅 ${new Date(session.start_time).toLocaleString()}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="color: #ff6b9d; font-weight: 700; margin: 0;">🚨 ${session.alerts} Alerts</p>
+                        <p style="color: #00ff88; font-weight: 600; margin: 0.3rem 0;">⏱️ ${Math.floor(session.frames_count / 30)}s</p>
+                    </div>
+                </div>
+                <button class="btn btn-glass" onclick="viewSession('${session.id}')" style="margin-top: 1rem; width: 100%;">View Details</button>
+            </div>
+        `).join('');
+    }
+
+    function viewSession(sessionId) {
+        alert('View session ' + sessionId);
+    }
+
+    function filterSessions() {
+        loadSessions();
+    }
+
+    loadSessions();
+</script>
+
+{% endblock %}

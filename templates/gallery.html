@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Screenshot Gallery - SentinelDrive{% endblock %}
+{% block content %}
+
+<h1 style="text-align: center; margin-bottom: 2rem;">📸 SCREENSHOT GALLERY</h1>
+
+<!-- Controls -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3">
+        <div class="glass-card fade-in">
+            <h4>🎛️ Controls</h4>
+            <button class="btn btn-glass w-100 mb-2" onclick="refreshGallery()">🔄 Refresh</button>
+            <button class="btn btn-glass w-100 mb-2" onclick="downloadAll()">📥 Download All</button>
+            <button class="btn btn-glass w-100" onclick="clearAll()" style="background: rgba(255, 100, 100, 0.3) !important; border-color: #ff6b6b;">🗑️ Clear All</button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-lg-9">
+        <div class="glass-card fade-in">
+            <h4>📊 Gallery Stats</h4>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div style="text-align: center;">
+                        <p style="color: #b0b8c5; margin: 0;">Total Screenshots</p>
+                        <p style="font-size: 2rem; font-weight: 800; color: #ff6b9d; margin: 0.5rem 0;" id="totalCount">0</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="text-align: center;">
+                        <p style="color: #b0b8c5; margin: 0;">Total Size</p>
+                        <p style="font-size: 2rem; font-weight: 800; color: #00ff88; margin: 0.5rem 0;" id="totalSize">0 MB</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="text-align: center;">
+                        <p style="color: #b0b8c5; margin: 0;">Latest</p>
+                        <p style="font-size: 1.2rem; font-weight: 600; color: #ffcc00; margin: 0.5rem 0;" id="latestTime">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gallery Grid -->
+<div class="glass-card fade-in">
+    <h4 style="margin-bottom: 1.5rem;">📷 All Screenshots</h4>
+    <div id="galleryContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        <p style="text-align: center; color: #b0b8c5; padding: 2rem; grid-column: 1/-1;">Loading screenshots...</p>
+    </div>
+</div>
+
+<!-- Modal for Full Image View -->
+<div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="position: relative; max-width: 90%; max-height: 90%;">
+        <img id="modalImage" src="" style="max-width: 100%; max-height: 100%; border-radius: 1rem;">
+        <button onclick="closeModal()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.9); border: none; padding: 0.8rem 1.2rem; border-radius: 0.5rem; cursor: pointer; font-weight: 700;">✕ Close</button>
+    </div>
+</div>
+
+<script>
+    async function loadGallery() {
+        try {
+            const response = await fetch('/api/screenshots');
+            const data = await response.json();
+            displayGallery(data.screenshots);
+            updateStats(data.screenshots);
+        } catch (err) {
+            console.error('Error loading gallery:', err);
+        }
+    }
+
+    function displayGallery(screenshots) {
+        const container = document.getElementById('galleryContainer');
+        
+        if (!screenshots || screenshots.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #b0b8c5; padding: 2rem; grid-column: 1/-1;">No screenshots yet. Start detection to capture screenshots!</p>';
+            return;
+        }
+
+        container.innerHTML = screenshots.map((ss, idx) => `
+            <div style="background: rgba(255,255,255,0.08); border-radius: 1rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="position: relative; overflow: hidden; background: #000; height: 250px;">
+                    <img src="${ss.path}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="viewImage('${ss.path}')">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0,0,0,0.3)'" onmouseout="this.style.background='rgba(0,0,0,0)'"></div>
+                </div>
+                <div style="padding: 1rem;">
+                    <p style="color: #ffffff; margin: 0; font-weight: 600; word-break: break-all; font-size: 0.85rem;">${ss.filename}</p>
+                    <p style="color: #b0b8c5; margin: 0.5rem 0 0 0; font-size: 0.8rem;">📅 ${new Date(ss.created).toLocaleString()}</p>
+                    <p style="color: #ffcc00; margin: 0.3rem 0; font-size: 0.8rem;">📦 ${(ss.size / 1024).toFixed(2)} KB</p>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.8rem;">
+                        <button onclick="downloadImage('${ss.path}', '${ss.filename}')" class="btn btn-glass" style="flex: 1; padding: 0.5rem; font-size: 0.85rem;">📥 Download</button>
+                        <button onclick="deleteImage('${ss.filename}')" class="btn btn-glass" style="flex: 1; padding: 0.5rem; font-size: 0.85rem; background: rgba(255,100,100,0.3) !important; border-color: #ff6b6b;">🗑️ Delete</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function updateStats(screenshots) {
+        const count = screenshots.length;
+        const totalSize = screenshots.reduce((sum, ss) => sum + ss.size, 0) / (1024 * 1024);
+        const latest = screenshots.length > 0 ? new Date(screenshots[0].created).toLocaleString() : '--';
+        
+        document.getElementById('totalCount').textContent = count;
+        document.getElementById('totalSize').textContent = totalSize.toFixed(2) + ' MB';
+        document.getElementById('latestTime').textContent = latest;
+    }
+
+    function viewImage(src) {
+        const modal = document.getElementById('imageModal');
+        document.getElementById('modalImage').src = src;
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('imageModal').style.display = 'none';
+    }
+
+    function downloadImage(path, filename) {
+        const link = document.createElement('a');
+        link.href = path;
+        link.download = filename;
+        link.click();
+    }
+
+    async function downloadAll() {
+        alert('Downloading all screenshots... (feature coming soon)');
+    }
+
+    async function deleteImage(filename) {
+        if (!confirm('Delete this screenshot?')) return;
+        
+        try {
+            const response = await fetch(`/api/screenshots/${filename}`, { method: 'DELETE' });
+            if (response.ok) {
+                alert('Screenshot deleted!');
+                loadGallery();
+            }
+        } catch (err) {
+            alert('Error deleting screenshot');
+        }
+    }
+
+    async function clearAll() {
+        if (!confirm('Delete ALL screenshots? This cannot be undone!')) return;
+        
+        try {
+            const response = await fetch('/api/clear-all', { method: 'POST' });
+            if (response.ok) {
+                alert('All screenshots cleared!');
+                loadGallery();
+            }
+        } catch (err) {
+            alert('Error clearing screenshots');
+        }
+    }
+
+    function refreshGallery() {
+        loadGallery();
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    // Load gallery on page load
+    loadGallery();
+    
+    // Refresh every 10 seconds
+    setInterval(loadGallery, 10000);
+</script>
+
+{% endblock %}

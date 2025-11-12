@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Analytics - SentinelDrive{% endblock %}
+{% block content %}
+
+<h1 style="text-align: center; margin-bottom: 2rem;">📊 REAL-TIME ANALYTICS</h1>
+
+<div class="row g-4">
+    <!-- Main Chart -->
+    <div class="col-lg-8">
+        <div class="glass-card fade-in">
+            <h3>📈 Fatigue Level Trend</h3>
+            <canvas id="fatigueChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="col-lg-4">
+        <div class="glass-card fade-in">
+            <h3>📊 Session Stats</h3>
+            <div class="stat-box">
+                <div class="stat-label">Session Duration</div>
+                <div class="stat-big-value" id="sessionDuration">00:00:00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Alerts</div>
+                <div class="stat-big-value" id="totalAlerts">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Avg Fatigue</div>
+                <div class="stat-big-value" id="avgFatigue">0%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Meter -->
+<div class="row g-4 mt-2">
+    <div class="col-lg-6">
+        <div class="glass-card fade-in">
+            <h3>🎯 LIVE PERFORMANCE METER</h3>
+            <div class="performance-meter-container">
+                <div class="performance-meter">
+                    <div class="meter-section green"></div>
+                    <div class="meter-section yellow"></div>
+                    <div class="meter-section red"></div>
+                    <div class="meter-needle" id="meterNeedle"></div>
+                </div>
+                <div class="meter-labels">
+                    <span>AWAKE</span>
+                    <span>DROWSY</span>
+                    <span>CRITICAL</span>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 1rem; font-weight: 700;">
+                Current Status: <span id="meterStatus" style="color: #00ff88;">AWAKE</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Eye Aspect Ratio Chart -->
+    <div class="col-lg-6">
+        <div class="glass-card fade-in">
+            <h3>👁️ Eye Aspect Ratio (EAR)</h3>
+            <canvas id="earChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics -->
+<div class="row g-4 mt-2">
+    <div class="col-md-3">
+        <div class="glass-card fade-in">
+            <div class="metric-card">
+                <div class="metric-label">Peak Fatigue</div>
+                <div class="metric-value" id="peakFatigue">0/10</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card fade-in">
+            <div class="metric-card">
+                <div class="metric-label">Alert Frequency</div>
+                <div class="metric-value" id="alertFreq">0/min</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card fade-in">
+            <div class="metric-card">
+                <div class="metric-label">Avg EAR</div>
+                <div class="metric-value" id="avgEAR">0.00</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card fade-in">
+            <div class="metric-card">
+                <div class="metric-label">Avg MAR</div>
+                <div class="metric-value" id="avgMAR">0.00</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    let fatigueChart, earChart;
+    let sessionStart = Date.now();
+    let alertCount = 0;
+    let metricsData = [];
+
+    async function initCharts() {
+        // Fatigue Chart
+        const fatigueCtx = document.getElementById('fatigueChart').getContext('2d');
+        fatigueChart = new Chart(fatigueCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Fatigue Level',
+                    data: [],
+                    borderColor: '#ff6b9d',
+                    backgroundColor: 'rgba(255, 107, 157, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 10, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+
+        // EAR Chart
+        const earCtx = document.getElementById('earChart').getContext('2d');
+        earChart = new Chart(earCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'EAR Value',
+                    data: [],
+                    borderColor: '#4dd0e1',
+                    backgroundColor: 'rgba(77, 208, 225, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 1, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+
+        updateCharts();
+    }
+
+    async function updateCharts() {
+        const response = await fetch('/api/metrics-history');
+        const data = await response.json();
+        metricsData = data.history;
+
+        if (metricsData.length > 0) {
+            fatigueChart.data.labels = metricsData.map((m, i) => i % 10 === 0 ? i : '');
+            fatigueChart.data.datasets[0].data = metricsData.map(m => m.fatigue);
+            fatigueChart.update();
+
+            earChart.data.labels = metricsData.map((m, i) => i % 10 === 0 ? i : '');
+            earChart.data.datasets[0].data = metricsData.map(m => m.ear);
+            earChart.update();
+
+            updateStats();
+            updatePerformanceMeter();
+        }
+    }
+
+    function updateStats() {
+        const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+        const hours = Math.floor(elapsed / 3600);
+        const minutes = Math.floor((elapsed % 3600) / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('sessionDuration').textContent = 
+            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        const avgFatigue = metricsData.length > 0 ? 
+            Math.round(metricsData.reduce((a, m) => a + m.fatigue, 0) / metricsData.length) : 0;
+        document.getElementById('avgFatigue').textContent = avgFatigue + '%';
+
+        const peakFatigue = metricsData.length > 0 ? Math.max(...metricsData.map(m => m.fatigue)) : 0;
+        document.getElementById('peakFatigue').textContent = peakFatigue + '/10';
+
+        const avgEAR = metricsData.length > 0 ? 
+            (metricsData.reduce((a, m) => a + m.ear, 0) / metricsData.length).toFixed(2) : 0;
+        document.getElementById('avgEAR').textContent = avgEAR;
+
+        alertCount = metricsData.filter(m => m.status !== 'AWAKE').length;
+        document.getElementById('totalAlerts').textContent = alertCount;
+    }
+
+    function updatePerformanceMeter() {
+        const currentMetric = metricsData[metricsData.length - 1];
+        if (!currentMetric) return;
+
+        const fatigue = currentMetric.fatigue;
+        const angle = (fatigue / 10) * 180 - 90;
+        document.getElementById('meterNeedle').style.transform = `rotate(${angle}deg)`;
+
+        let status = 'AWAKE ✅';
+        let color = '#00ff88';
+        if (fatigue >= 8) {
+            status = '🚨 CRITICAL';
+            color = '#ff3333';
+        } else if (fatigue >= 5) {
+            status = '⚠️ DROWSY';
+            color = '#ffcc00';
+        }
+        
+        const statusEl = document.getElementById('meterStatus');
+        statusEl.textContent = status;
+        statusEl.style.color = color;
+    }
+
+    setInterval(updateCharts, 1000);
+    initCharts();
+</script>
+
+<style>
+.stat-box {
+    background: rgba(255, 255, 255, 0.12);
+    padding: 1rem;
+    border-radius: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.stat-label { font-size: 0.85rem; color: #b0b8c5; text-transform: uppercase; }
+.stat-big-value { font-size: 2rem; font-weight: 800; color: #ff6b9d; margin-top: 0.5rem; }
+
+.performance-meter-container {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.performance-meter {
+    width: 250px;
+    height: 150px;
+    margin: 0 auto;
+    position: relative;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 250px 250px 0 0;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.meter-section {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 33.33%;
+}
+
+.meter-section.green { background: linear-gradient(90deg, #00ff88, #00dd7a); left: 0; }
+.meter-section.yellow { background: linear-gradient(90deg, #ffcc00, #ffaa00); left: 33.33%; }
+.meter-section.red { background: linear-gradient(90deg, #ff6b6b, #ff3333); left: 66.66%; }
+
+.meter-needle {
+    position: absolute;
+    width: 4px;
+    height: 120px;
+    background: #ffffff;
+    bottom: 0;
+    left: 50%;
+    transform: rotate(-90deg);
+    transform-origin: bottom center;
+    transition: transform 0.5s ease;
+}
+
+.meter-labels {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+</style>
+
+{% endblock %}

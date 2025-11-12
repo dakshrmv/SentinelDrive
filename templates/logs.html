@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Events - SentinelDrive{% endblock %}
+{% block content %}
+
+<h1 style="text-align: center; margin-bottom: 2rem;">📹 SESSION EVENTS & HISTORY</h1>
+
+<div class="row g-4">
+    <!-- Filters -->
+    <div class="col-lg-3">
+        <div class="glass-card fade-in">
+            <h4>🔍 Filters</h4>
+            <div style="margin-bottom: 1rem;">
+                <label style="color: #ffffff; font-weight: 600; display: block; margin-bottom: 0.5rem;">Date Range</label>
+                <input type="date" id="dateFrom" style="width: 100%; padding: 0.6rem; margin-bottom: 0.5rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+                <input type="date" id="dateTo" style="width: 100%; padding: 0.6rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+            <button class="btn btn-glass w-100" onclick="filterSessions()">🔎 Filter</button>
+        </div>
+    </div>
+
+    <!-- Sessions List -->
+    <div class="col-lg-9">
+        <div class="glass-card fade-in">
+            <h4>📊 All Sessions</h4>
+            <div id="sessionsList" style="max-height: 600px; overflow-y: auto;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadSessions() {
+        try {
+            const response = await fetch('/api/sessions');
+            const data = await response.json();
+            displaySessions(data.sessions);
+        } catch (err) {
+            console.error('Error loading sessions:', err);
+        }
+    }
+
+    function displaySessions(sessions) {
+        const list = document.getElementById('sessionsList');
+        if (!sessions || sessions.length === 0) {
+            list.innerHTML = '<p style="text-align: center; color: #b0b8c5; padding: 2rem;">No sessions found. Start detection to create one!</p>';
+            return;
+        }
+
+        list.innerHTML = sessions.reverse().map(session => `
+            <div style="background: rgba(255,255,255,0.08); padding: 1.5rem; border-radius: 0.8rem; margin-bottom: 1rem; border-left: 4px solid #ff6b9d;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <p style="font-weight: 700; color: #ffffff; margin: 0; font-size: 1.1rem;">Session ${session.id}</p>
+                        <p style="color: #b0b8c5; margin: 0.5rem 0; font-size: 0.95rem;">📅 ${new Date(session.start_time).toLocaleString()}</p>
+                        <p style="color: #ffffff; margin: 0.3rem 0;"><strong>Driver:</strong> ${session.driver_id || 'Unknown'}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="color: #ff6b9d; font-weight: 700; margin: 0; font-size: 1.2rem;">🚨 ${session.alerts} Alerts</p>
+                        <p style="color: #00ff88; font-weight: 600; margin: 0.3rem 0;">⏱️ ${Math.floor(session.duration_seconds || 0)}s</p>
+                        <p style="color: #ffcc00; font-weight: 600;">Peak Fatigue: ${session.peak_fatigue || 0}/10</p>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button class="btn btn-glass" onclick="viewSessionDetail('${session.id}')" style="flex: 1; padding: 0.6rem;">View Details</button>
+                    <button class="btn btn-glass" onclick="exportSession('${session.id}')" style="flex: 1; padding: 0.6rem;">📥 Export</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function viewSessionDetail(sessionId) {
+        try {
+            const response = await fetch(`/api/sessions/${sessionId}`);
+            const data = await response.json();
+            alert(`Session Details:\n\n${JSON.stringify(data, null, 2)}`);
+        } catch (err) {
+            alert('Error loading session details');
+        }
+    }
+
+    async function exportSession(sessionId) {
+        window.location.href = `/api/export/session/${sessionId}`;
+    }
+
+    function filterSessions() {
+        loadSessions();
+    }
+
+    loadSessions();
+    setInterval(loadSessions, 5000); // Refresh every 5 seconds
+</script>
+
+{% endblock %}

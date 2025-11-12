@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Driver Profiles - SentinelDrive{% endblock %}
+{% block content %}
+
+<h1 style="text-align: center; margin-bottom: 2rem;">👥 DRIVER PROFILES</h1>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div id="profilesList"></div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="glass-card fade-in">
+            <h3>➕ Create New Profile</h3>
+            <form onsubmit="createProfile(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="color: #ffffff; font-weight: 600;">Driver Name</label>
+                    <input type="text" id="driverName" placeholder="Enter name" required
+                           style="width: 100%; padding: 0.6rem; margin-top: 0.5rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="color: #ffffff; font-weight: 600;">Sensitivity</label>
+                    <select id="newSensitivity" style="width: 100%; padding: 0.6rem; margin-top: 0.5rem; border-radius: 0.6rem; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">
+                        <option>easy</option>
+                        <option selected>normal</option>
+                        <option>strict</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-glass w-100">Create Profile</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadProfiles() {
+        const response = await fetch('/api/drivers');
+        const data = await response.json();
+        displayProfiles(data.drivers);
+    }
+
+    function displayProfiles(drivers) {
+        const list = document.getElementById('profilesList');
+        list.innerHTML = Object.entries(drivers).map(([id, profile]) => `
+            <div class="glass-card fade-in" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin: 0; color: #ffffff;">${profile.name}</h4>
+                        <p style="color: #b0b8c5; margin: 0.3rem 0;">Sensitivity: <strong>${profile.sensitivity}</strong></p>
+                    </div>
+                    <button class="btn btn-glass" onclick="switchDriver('${id}')">Switch</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function createProfile(e) {
+        e.preventDefault();
+        await fetch('/api/drivers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: document.getElementById('driverName').value,
+                sensitivity: document.getElementById('newSensitivity').value
+            })
+        });
+        loadProfiles();
+        document.getElementById('driverName').value = '';
+    }
+
+    async function switchDriver(driverId) {
+        await fetch(`/api/current-driver/${driverId}`, { method: 'POST' });
+        alert('Driver switched!');
+    }
+
+    loadProfiles();
+</script>
+
+{% endblock %}
